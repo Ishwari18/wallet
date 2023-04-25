@@ -33,6 +33,12 @@ export default function CreateWallet() {
     }
   }
 
+  async function handleAddAccount() {
+    const newWallet =  CreateWallet();
+    const newAccounts = [...accounts, newWallet.address];
+    setAccounts(newAccounts);
+  }
+
   async function getAccounts() {
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -50,40 +56,33 @@ export default function CreateWallet() {
     setShowDropdown(!showDropdown);
   }
 
-  function handlePrivateKeyChange(event) {
-    setPrivateKey(event.target.value);
-  }
-
   return (
     <>
       <div>
         {wallet ? (
           <div>
             <p>Address: {wallet.address}</p>
-            <p>Mnemonic: {mnemonic}</p>
-            {/* <p>Private Key: {privateKey}</p> */}
-            <button
+           <p>Mnemonic: {mnemonic}</p>
+            <p>Private Key: {privateKey}</p>  
+           <button
               onClick={() => {
                 navigator.clipboard.writeText(mnemonic);
                 alert("Mnemonic saved!");
               }}
             >
               Save Mnemonic
-            </button>
+            </button> 
           </div>
         ) : (
-          <div>
+          <div >
+            <span>New to videowiki wallet?</span>
             <button onClick={handleCreateWallet}>Create Wallet</button>
-            <input
-              type="text"
-              value={privateKey}
-              onChange={handlePrivateKeyChange}
-            />
             <button onClick={handleImportWallet}>Import Wallet</button>
           </div>
         )}
       </div>
       <div>
+      <button onClick={handleAddAccount}>Add Account</button>
         <button onClick={toggleDropdown}>Accounts</button>
         {showDropdown && (
           <div className="dropdown">
@@ -93,6 +92,7 @@ export default function CreateWallet() {
           </div>
         )}
       </div>
+      
     </>
   );
 }
