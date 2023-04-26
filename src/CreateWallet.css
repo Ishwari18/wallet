@@ -1,0 +1,19 @@
+button {
+    background-color: rgb(200, 200, 244);
+}
+
+.container {
+    display: flex;
+    margin: auto;
+}
+.networkitem {
+    background-color: rgb(233, 175, 191);
+    padding: 5px;
+}
+.networkitem:hover {
+    background-color: rgb(255, 211, 223);
+}
+
+.dropdown {
+    position: absolute;
+}
