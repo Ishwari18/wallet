@@ -1,4 +1,4 @@
-import { React, useState } from "react";
+import { React, useState, useRef } from "react";
 import networks from "./networks.js";
 import "./CreateWallet.css";
 const ethers = require("ethers");
@@ -6,14 +6,17 @@ const provider = new ethers.providers.JsonRpcProvider(networks.goerli.rpcUrl);
 
 export default function CreateWallet() {
   const [wallet, setWallet] = useState(null);
-  //const [mnemonic, setMnemonic] = useState("");
+  const [privateKey, setPrivateKey] = useState("");
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [mnemonic, setMnemonic] = useState("");
   const [network, setNetwork] = useState(networks[0]);
   const [accounts, setAccounts] = useState([]);
-  //const [showMnemonic, setShowMnemonic] = useState(false);
+  const [showMnemonic, setShowMnemonic] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [networkDropdown, setNetworkDropdown] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  //const [gasLimit, setgasLimit] = useState("200");
 
   //console.log(network);
   async function handleCreateWallet() {
@@ -21,7 +24,6 @@ export default function CreateWallet() {
     setWallet(newWallet);
     // setMnemonic(newWallet.mnemonic.phrase);
   }
-
   async function handleImportWallet() {
     try {
       const privateKey = prompt("Enter your private key");
@@ -37,21 +39,6 @@ export default function CreateWallet() {
     }
   }
 
-  function handleNetworkChange(event) {
-    const selectedNetwork = Object.keys(networks).find(
-      (key) => networks[key].name === event.target.value
-    );
-
-    console.log(selectedNetwork);
-    // use selectedNetwork.rpcUrl to set the provider
-    if (selectedNetwork) {
-      setNetwork(selectedNetwork);
-      provider.resetEventsBlock(0);
-      provider.resetCache();
-      alert(`Connected to ${selectedNetwork.name}`);
-    }
-  }
-
   async function getAccounts() {
     try {
       //const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -64,34 +51,54 @@ export default function CreateWallet() {
     }
   }
 
-  async function getAccounts() {
-    try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const accounts = await signer.getAddress();
-      setAccounts(accounts);
-      return [accounts];
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
+  const handleShowPrivateKey = () => {
+    setShowPrivateKey(true);
+  };
+
+  function handleCopyMnemonic() {
+    navigator.clipboard.writeText(mnemonic);
+    alert("Mnemonic copied to clipboard!");
   }
 
-  const handleSend = async (event) => {
-    event.preventDefault();
-    if (recipient.trim() === "" || amount.trim() === "") {
-      return;
+  // async function sendEth(e) {
+  //   e.preventDefault();
+  //   try {
+  //     if (!recipient || !amount)
+  //       throw new Error("Recipient address and amount are required");
+  //     const tx = {
+  //       to: recipient,
+  //       value: ethers.utils.parseEther(amount),
+  //     };
+  //     const signedTx = await wallet.signTransaction(tx);
+  //     const txResponse = await provider.sendTransaction(signedTx);
+  //     console.log(
+  //       `Transaction sent: https://goerli.etherscan.io/tx/${txResponse.hash}`
+  //     );
+  //   } catch (error) {
+  //     console.error(error);
+  //     alert("Failed to send ETH");
+  //   }
+
+  async function sendEth(e) {
+    e.preventDefault();
+    try {
+      if (!recipient || !amount)
+        throw new Error("Recipient address and amount are required");
+        const tx = {
+          to: recipient,
+          value: ethers.utils.parseEther(amount),
+          gasLimit: ethers.BigNumber.from("21000"), // set the gas limit to 21000 Wei
+        };
+      const signedTx = await wallet.signTransaction(tx);
+      const txResponse = await provider.sendTransaction(signedTx);
+      console.log(
+        `Transaction sent: https://goerli.etherscan.io/tx/${txResponse.hash}`
+      );
+    } catch (error) {
+      console.error(error);
+      alert("Failed to send ETH");
     }
-   const provider = new ethers.providers.JsonRpcProvider(network.rpcUrl);
-    const signer = provider.getSigner();
-    const tx = await signer.sendTransaction({
-      to: recipient.trim(),
-      value: ethers.utils.parseEther(amount.trim()),
-    });
-    console.log("Transaction sent:", tx.hash);
-    setRecipient("");
-    setAmount("");
-  };
+  }
 
   return (
     <>
@@ -104,50 +111,64 @@ export default function CreateWallet() {
           </div>
         )}
 
-         Display mnemonic if wallet was created 
-         {showMnemonic && (
+        {showMnemonic && (
           <div>
             <p>Mnemonic: {mnemonic}</p>
             <button onClick={handleCopyMnemonic}>Copy Mnemonic</button>
           </div>
-        )} 
+        )}
 
         {/* Dashboard */}
         {wallet && (
           <div>
-            <button onClick={() => setShowDropdown(!showDropdown)}>
-              Network: {networks.name}
-            </button>
-            {showDropdown && (
-              <div className="dropdown">
-                {Object.values(networks).map((n) => (
-                  <div
-                    className="networkitem"
-                    key={n.name}
-                    onClick={handleNetworkChange}
-                    value={n.name}
-                  >
-                    {n.name}
-                  </div>
-                ))}
-              </div>
-            )}
             <p>Address: {wallet.address}</p>
+            <p>
+              Balance:{" "}
+              {wallet.balance}
+                
+            </p>
+            {showPrivateKey ? (
+              <p>Private Key: {wallet.privateKey}</p>
+            ) : (
+              <button onClick={handleShowPrivateKey}>Show Private Key</button>
+            )}
 
-            <form onSubmit={handleSend}>
-              <input
-                type="text"
-                placeholder="Recipient address"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Amount (ETH)"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-              <button type="submit">Send</button>
+            <form onSubmit={sendEth}>
+              <div className="form-group">
+                <label htmlFor="recipient">Recipient address:</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="recipient"
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="amount">Amount (ETH):</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+
+              {/* <div className="form-group">
+                <label htmlFor="gas-price">Gas Limit (Gwei):</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="gas-price"
+                  value={gasLimit}
+                  onChange={(e) => setgasLimit(e.target.value)}
+                />
+              </div> */}
+
+              <button type="submit" className="btn btn-primary">
+                Send
+              </button>
             </form>
           </div>
         )}
