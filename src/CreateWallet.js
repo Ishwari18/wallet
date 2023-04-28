@@ -1,8 +1,9 @@
-import { React, useState, useRef } from "react";
+import { React, useState, useEffect } from "react";
 import networks from "./networks.js";
 import "./CreateWallet.css";
 const ethers = require("ethers");
 const provider = new ethers.providers.JsonRpcProvider(networks.goerli.rpcUrl);
+
 
 export default function CreateWallet() {
   const [wallet, setWallet] = useState(null);
@@ -16,14 +17,19 @@ export default function CreateWallet() {
   const [networkDropdown, setNetworkDropdown] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
-  //const [gasLimit, setgasLimit] = useState("200");
 
-  //console.log(network);
+  useEffect(() => {
+    const newWallet = ethers.Wallet.createRandom();
+    setWallet(newWallet);
+  }, []);
+
   async function handleCreateWallet() {
     const newWallet = ethers.Wallet.createRandom();
     setWallet(newWallet);
-    // setMnemonic(newWallet.mnemonic.phrase);
+    setMnemonic(newWallet.mnemonic.phrase);
+    return newWallet;
   }
+
   async function handleImportWallet() {
     try {
       const privateKey = prompt("Enter your private key");
@@ -41,7 +47,6 @@ export default function CreateWallet() {
 
   async function getAccounts() {
     try {
-      //const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       const accounts = await signer.getAddress();
       return [accounts];
@@ -50,53 +55,43 @@ export default function CreateWallet() {
       return null;
     }
   }
-
   const handleShowPrivateKey = () => {
     setShowPrivateKey(true);
   };
-
   function handleCopyMnemonic() {
     navigator.clipboard.writeText(mnemonic);
     alert("Mnemonic copied to clipboard!");
   }
+  const handleRecipientChange = (event) => {
+    setRecipient(event.target.value);
+  };
+  const handleAmountChange = (event) => {
+    setAmount(event.target.value);
+  };
 
-  // async function sendEth(e) {
-  //   e.preventDefault();
-  //   try {
-  //     if (!recipient || !amount)
-  //       throw new Error("Recipient address and amount are required");
-  //     const tx = {
-  //       to: recipient,
-  //       value: ethers.utils.parseEther(amount),
-  //     };
-  //     const signedTx = await wallet.signTransaction(tx);
-  //     const txResponse = await provider.sendTransaction(signedTx);
-  //     console.log(
-  //       `Transaction sent: https://goerli.etherscan.io/tx/${txResponse.hash}`
-  //     );
-  //   } catch (error) {
-  //     console.error(error);
-  //     alert("Failed to send ETH");
-  //   }
-
-  async function sendEth(e) {
-    e.preventDefault();
+  const handleSend = async () => {
+    if (!wallet) {
+      alert("Wallet not created yet. Please create a wallet first.");
+      return;
+    }
     try {
-      if (!recipient || !amount)
-        throw new Error("Recipient address and amount are required");
-        const tx = {
-          to: recipient,
-          value: ethers.utils.parseEther(amount),
-          gasLimit: ethers.BigNumber.from("21000"), // set the gas limit to 21000 Wei
-        };
-      const signedTx = await wallet.signTransaction(tx);
-      const txResponse = await provider.sendTransaction(signedTx);
-      console.log(
-        `Transaction sent: https://goerli.etherscan.io/tx/${txResponse.hash}`
-      );
+      const signer = wallet.connect(provider);
+      const tx = await signer.sendTransaction({
+        to: recipient,
+        value: ethers.utils.parseEther(amount),
+        gasLimit: 21000,
+      });
+      await tx.wait();
+      alert(`Transaction successful with hash: ${tx.hash}`);
+      console.log(`Transaction successful with hash: ${tx.hash}`);
     } catch (error) {
       console.error(error);
-      alert("Failed to send ETH");
+      if (error.message.includes("insufficient funds")) {
+        alert("Insufficient balance. Required balance");
+      }
+      else {
+        alert("Transaction failed. Please try again later.");
+      }
     }
   }
 
@@ -122,54 +117,24 @@ export default function CreateWallet() {
         {wallet && (
           <div>
             <p>Address: {wallet.address}</p>
-            <p>
-              Balance:{" "}
-              {wallet.balance}
-                
-            </p>
+            <p>Balance: {wallet.balance}</p>
             {showPrivateKey ? (
               <p>Private Key: {wallet.privateKey}</p>
             ) : (
               <button onClick={handleShowPrivateKey}>Show Private Key</button>
             )}
 
-            <form onSubmit={sendEth}>
-              <div className="form-group">
-                <label htmlFor="recipient">Recipient address:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="recipient"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="amount">Amount (ETH):</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-
-              {/* <div className="form-group">
-                <label htmlFor="gas-price">Gas Limit (Gwei):</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="gas-price"
-                  value={gasLimit}
-                  onChange={(e) => setgasLimit(e.target.value)}
-                />
-              </div> */}
-
-              <button type="submit" className="btn btn-primary">
-                Send
-              </button>
-            </form>
+            <div>
+              <label>Recipient:</label>
+              <input
+                type="text"
+                value={recipient}
+                onChange={handleRecipientChange}
+              />
+              <label>Amount:</label>
+              <input type="text" value={amount} onChange={handleAmountChange} />
+              <button onClick={handleSend}>Send</button>
+            </div>
           </div>
         )}
       </div>

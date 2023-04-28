@@ -2,7 +2,7 @@ const { ethers } = require("ethers");
 
 // Replace with your own private key
 const privateKey =
-  "0x491304b49af66035d37f1d74265868d348a0f31d3816deee2ff624f3f4a9a431";
+  "0xebb67e3cd45212fab888ad86013d217005e7feb55c71ade8ddd087e66589a31d";
 
 async function checkBalance() {
   try {
