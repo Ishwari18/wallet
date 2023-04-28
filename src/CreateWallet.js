@@ -4,7 +4,6 @@ import "./CreateWallet.css";
 const ethers = require("ethers");
 const provider = new ethers.providers.JsonRpcProvider(networks.goerli.rpcUrl);
 
-
 export default function CreateWallet() {
   const [wallet, setWallet] = useState(null);
   const [privateKey, setPrivateKey] = useState("");
@@ -13,15 +12,13 @@ export default function CreateWallet() {
   const [network, setNetwork] = useState(networks[0]);
   const [accounts, setAccounts] = useState([]);
   const [showMnemonic, setShowMnemonic] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [networkDropdown, setNetworkDropdown] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
 
-  useEffect(() => {
-    const newWallet = ethers.Wallet.createRandom();
-    setWallet(newWallet);
-  }, []);
+  // useEffect(() => {
+  //   const newWallet = ethers.Wallet.createRandom();
+  //   setWallet(newWallet);
+  // }, []);
 
   async function handleCreateWallet() {
     const newWallet = ethers.Wallet.createRandom();
@@ -100,7 +97,8 @@ export default function CreateWallet() {
       <div>
         {/* Wallet creation options */}
         {wallet === null && (
-          <div>
+          <div className="walletcreatebtns">
+            <p id="first">New to videowiki wallet?</p>
             <button onClick={handleCreateWallet}>Create Wallet</button>
             <button onClick={handleImportWallet}>Import Wallet</button>
           </div>

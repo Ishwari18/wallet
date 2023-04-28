@@ -1,17 +1,27 @@
 button {
-    background-color: rgb(200, 200, 244);
+    background-color: rgb(215, 215, 252);
+    margin: 10px 20px;
+    padding: 5px 10px;
+    border: 1px black solid;
+    border-radius: 20px;
+    transition: 0.2s;
 }
-
+button:hover {
+    background-color: rgb(193, 193, 243);
+}
+.walletcreatebtns {
+    position: relative;
+    left: 500px;
+    top: 80%;
+    text-align: center;
+    
+}
+.walletcreatebtns p {
+    font-size: 25px;
+}
 .container {
     display: flex;
     margin: auto;
-}
-.networkitem {
-    background-color: rgb(233, 175, 191);
-    padding: 5px;
-}
-.networkitem:hover {
-    background-color: rgb(255, 211, 223);
 }
 
 .dropdown {
