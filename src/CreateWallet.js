@@ -2,7 +2,7 @@ import { React, useState, useEffect } from "react";
 import networks from "./networks.js";
 import "./CreateWallet.css";
 const ethers = require("ethers");
-const provider = new ethers.providers.JsonRpcProvider(networks.goerli.rpcUrl);
+const provider = new ethers.providers.JsonRpcProvider(networks.sepolia.rpcUrl);
 
 export default function CreateWallet() {
   const [wallet, setWallet] = useState(null);
@@ -14,11 +14,8 @@ export default function CreateWallet() {
   const [showMnemonic, setShowMnemonic] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
-
-  // useEffect(() => {
-  //   const newWallet = ethers.Wallet.createRandom();
-  //   setWallet(newWallet);
-  // }, []);
+  const [nfts, setNfts] = useState(null);
+  const [erc20Tokens, setERC20Tokens] = useState([]);
 
   async function handleCreateWallet() {
     const newWallet = ethers.Wallet.createRandom();
@@ -44,14 +41,14 @@ export default function CreateWallet() {
 
   async function getAccounts() {
     try {
-      const signer = provider.getSigner();
-      const accounts = await signer.getAddress();
-      return [accounts];
+      const accounts = await provider.listAccounts();
+      return accounts;
     } catch (error) {
       console.error(error);
       return null;
     }
   }
+
   const handleShowPrivateKey = () => {
     setShowPrivateKey(true);
   };
@@ -85,12 +82,119 @@ export default function CreateWallet() {
       console.error(error);
       if (error.message.includes("insufficient funds")) {
         alert("Insufficient balance. Required balance");
-      }
-      else {
+      } else {
         alert("Transaction failed. Please try again later.");
       }
     }
+  };
+
+  async function getNFTs() {
+    if (!wallet) {
+      alert("Wallet not created yet. Please create a wallet first.");
+      return;
+    }
+
+    const address = wallet.address;
+    const abi = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
+      "function tokenURI(uint256 tokenId) view returns (string)",
+    ];
+    const contractAddress = "0x7cF4a7Aa06092ccBBD8D0f2AB6207F1610Ab8353"; // Replace with the address of the NFT contract
+    const contract = new ethers.Contract(contractAddress, abi, provider);
+    const balance = await contract.balanceOf(address);
+    const tokens = [];
+    for (let i = 0; i < balance.toNumber(); i++) {
+      const tokenId = await contract.tokenOfOwnerByIndex(address, i);
+      const uri = await contract.tokenURI(tokenId);
+      tokens.push({ id: tokenId.toNumber(), uri });
+    }
+
+    const tableRows = tokens.map((token) => (
+      <tr key={token.id}>
+        <td>{token.id}</td>
+        <td>
+          <a href={token.uri}>{token.uri}</a>
+        </td>
+        <td>
+          <img src={token.image} alt={`NFT ${token.id}`} />
+        </td>
+      </tr>
+    ));
+    setNfts(
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>URI</th>
+            <th>Image</th>
+          </tr>
+        </thead>
+        <tbody>{tableRows}</tbody>
+      </table>
+    );
   }
+  async function handleGetERC20Tokens() {
+    if (!wallet) {
+      alert("Wallet not created yet. Please create a wallet first.");
+      return;
+    }
+
+    const address = wallet.address;
+    const abi = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function symbol() view returns (string)",
+      "function name() view returns (string)",
+    ];
+
+    const erc20TokenAddresses = [
+      "0x20230f0a43d64d70d67999d6c1fC06dcBB4610F2",
+    ]; // Replace with an array of ERC20 token addresses
+
+    const erc20Tokens = [];
+
+    for (let i = 0; i < erc20TokenAddresses.length; i++) {
+      const contractAddress = erc20TokenAddresses[i];
+      const contract = new ethers.Contract(contractAddress, abi, provider);
+      const balance = await contract.balanceOf(address);
+      const symbol = await contract.symbol();
+      const name = await contract.name();
+      erc20Tokens.push({
+        address: contractAddress,
+        balance: balance.toString(),
+        symbol,
+        name,
+      });
+    }
+
+    setERC20Tokens(erc20Tokens);
+  }
+
+  const erc20TokensTable =
+    erc20Tokens.length > 0 ? (
+      <table>
+        <thead>
+          <tr>
+            <th>Token Name</th>
+            <th>Token Symbol</th>
+            <th>Balance</th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {erc20Tokens.map((token) => (
+            <tr key={token.address}>
+              <td>{token.name}</td>
+              <td>{token.symbol}</td>
+              <td>{ethers.utils.formatEther(token.balance)}</td>
+              <td>{token.address}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ) : (
+      <p>No ERC20 tokens found.</p>
+    );
 
   return (
     <>
@@ -133,6 +237,14 @@ export default function CreateWallet() {
               <input type="text" value={amount} onChange={handleAmountChange} />
               <button onClick={handleSend}>Send</button>
             </div>
+
+            <div>
+              <button onClick={getNFTs}>Get NFTs</button>
+              <button onClick={handleGetERC20Tokens}>Get ERC20 Tokens</button>
+              {nfts}
+              {erc20TokensTable}
+            </div>
+      
           </div>
         )}
       </div>
