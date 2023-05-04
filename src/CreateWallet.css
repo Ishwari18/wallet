@@ -27,3 +27,15 @@ button:hover {
 .dropdown {
     position: absolute;
 }
+
+table {
+    background-color: rgb(234, 234, 251);
+    margin-top: 20px;
+    position: relative;
+    width: 1300px;
+}
+th {
+    position: relative;
+    margin: 5px 10px;
+}
+
