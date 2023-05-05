@@ -100,7 +100,7 @@ export default function CreateWallet() {
       "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
       "function tokenURI(uint256 tokenId) view returns (string)",
     ];
-    const contractAddress = "0x2b1E5F044b0FFF37dE0EE7e9285B2c505074D704"; // Replace with the address of the NFT contract
+    const contractAddress = "0x3B50E61069c3381b6446Dc2Dc9a09819c64d6C19"; // Replace with the address of the NFT contract
     const contract = new ethers.Contract(contractAddress, abi, provider);
     const balance = await contract.balanceOf(address);
     const tokens = [];
@@ -148,7 +148,7 @@ export default function CreateWallet() {
     ];
 
     const erc20TokenAddresses = [
-      "0x51bB9613b288369Da00F162871671531c5cb3D93",
+      "0x49A6d8acC5908A8892b9c3B872206C02c14e6C59",
     ]; // Replace with an array of ERC20 token addresses
 
     const erc20Tokens = [];
