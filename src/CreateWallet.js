@@ -89,35 +89,73 @@ export default function CreateWallet() {
   };
 
   async function getNFTs() {
-    if (!wallet) {
-      alert("Wallet not created yet. Please create a wallet first.");
-      return;
-    }
-
     const address = wallet.address;
     const abi = [
       "function balanceOf(address owner) view returns (uint256)",
       "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
       "function tokenURI(uint256 tokenId) view returns (string)",
+      "function transferFrom(address from, address to, uint256 tokenId) public",
     ];
-    const contractAddress = "0x3B50E61069c3381b6446Dc2Dc9a09819c64d6C19"; // Replace with the address of the NFT contract
-    const contract = new ethers.Contract(contractAddress, abi, provider);
-    const balance = await contract.balanceOf(address);
+    const contracts = [
+      {
+        address: "0xCF2f99838637A447A27c698128cbd174b1BCAFBf", // Replace with the address of the first NFT contract
+        name: "NFT Contract 1",
+      },
+      {
+        address: "0xa43c9E8678cB4cd16f3d83bA6914966324bd9Afa", // Replace with the address of the second NFT contract
+        name: "NFT Contract 2",
+      },
+    ];
     const tokens = [];
-    for (let i = 0; i < balance.toNumber(); i++) {
-      const tokenId = await contract.tokenOfOwnerByIndex(address, i);
-      const uri = await contract.tokenURI(tokenId);
-      tokens.push({ id: tokenId.toNumber(), uri });
+    for (let j = 0; j < contracts.length; j++) {
+      const contract = new ethers.Contract(contracts[j].address, abi, provider);
+      const balance = await contract.balanceOf(address);
+      for (let i = 0; i < balance.toNumber(); i++) {
+        const tokenId = await contract.tokenOfOwnerByIndex(address, i);
+        const uri = await contract.tokenURI(tokenId);
+        tokens.push({
+          id: tokenId.toNumber(),
+          uri,
+          name: contracts[j].name,
+          contractAddress: contracts[j].address,
+        });
+      }
+    }
+    async function handleTransfer(tokenId) {
+
+      const signer = wallet.connect(provider);
+      const contractAddress = tokens.find((token) => token.id === tokenId)
+        .contractAddress;
+      const abi = [
+        "function transferFrom(address from, address to, uint256 tokenId) public",
+      ];
+      const contract = new ethers.Contract(contractAddress, abi, provider);
+      const recipient = prompt("Enter recipient address:");
+      if (!recipient) {
+        return;
+      }
+      try {
+        await contract.connect(signer).transferFrom(wallet.address, recipient, tokenId);
+        alert(`NFT ${tokenId} transferred successfully to ${recipient}`);
+      } catch (err) {
+        console.log(err);
+        alert(`Error transferring NFT ${tokenId}: ${err.message}`);
+      }
     }
 
     const tableRows = tokens.map((token) => (
-      <tr key={token.id}>
+      <tr key={(token.id + token.contractAddress)}>
         <td>{token.id}</td>
         <td>
           <a href={token.uri}>{token.uri}</a>
         </td>
         <td>
           <img src={token.image} alt={`NFT ${token.id}`} />
+        </td>
+        <td>{token.name}</td>
+        <td>{token.contractAddress}</td>
+        <td>
+          <button onClick={() => handleTransfer(token.id)}>Transfer</button>
         </td>
       </tr>
     ));
@@ -128,12 +166,16 @@ export default function CreateWallet() {
             <th>ID</th>
             <th>URI</th>
             <th>Image</th>
+            <th>Contract Name</th>
+            <th>Contract Address</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>{tableRows}</tbody>
       </table>
     );
   }
+
   async function handleGetERC20Tokens() {
     if (!wallet) {
       alert("Wallet not created yet. Please create a wallet first.");
@@ -146,10 +188,7 @@ export default function CreateWallet() {
       "function symbol() view returns (string)",
       "function name() view returns (string)",
     ];
-
-    const erc20TokenAddresses = [
-      "0x49A6d8acC5908A8892b9c3B872206C02c14e6C59",
-    ]; // Replace with an array of ERC20 token addresses
+    const erc20TokenAddresses = ["0x49A6d8acC5908A8892b9c3B872206C02c14e6C59"]; // Replace with an array of ERC20 token addresses
 
     const erc20Tokens = [];
 
@@ -169,7 +208,6 @@ export default function CreateWallet() {
 
     setERC20Tokens(erc20Tokens);
   }
-
   const erc20TokensTable =
     erc20Tokens.length > 0 ? (
       <table>
@@ -193,7 +231,7 @@ export default function CreateWallet() {
         </tbody>
       </table>
     ) : (
-      <p>No ERC20 tokens found.</p>
+      <p></p>
     );
 
   return (
@@ -243,7 +281,6 @@ export default function CreateWallet() {
               {nfts}
               {erc20TokensTable}
             </div>
-      
           </div>
         )}
       </div>
