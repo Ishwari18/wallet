@@ -13,47 +13,16 @@ const wallet = new ethers.Wallet("fdc3d7a7ef1129116fbf4d565cff4ce9f86570e67ed6a7
 
 const contract = new ethers.Contract(contractAddress, contractAbi, wallet);
 
-async function mintToken(to, uri, gasLimit) {
-  const tx = await contract.safeMint(to, uri, { gasLimit });
+async function mintToken() {
+  const to = "0x0A59223D2d7018C5d6f5fDD6d9a02Ea6828fD22f";
+  const uri = "https://opensea.io/assets/matic/0xe28d2d8746d855251ba677a91626009cb33aa4f9/5621";
+
+  const tx = await contract.safeMint(to, uri);
   await tx.wait();
-  console.log(`Minted token ${await contract.tokenURI(0)} to ${to}`);
+  console.log(`Minted token to ${to}`);
 }
-async function setApprovalForAll(operator, approved, gasLimit) {
-  const tx = await contract.setApprovalForAll(operator, approved, { gasLimit });
-  await tx.wait();
-  console.log(`Set approval for operator ${operator} to ${approved}`);
-}
-
-// Transfer a token
-async function transferToken(tokenId, to) {
-  const tx = await contract["safeTransferFrom(address,address,uint256)"](await contract.ownerOf(tokenId), to, tokenId);
-  await tx.wait();
-  console.log(`Transferred token ${tokenId} to ${to}`);
-}
-
-// Check token balance of an address
-async function checkBalance(address) {
-  const balance = await contract.balanceOf(address);
-  console.log(`Address ${address} has ${balance} tokens`);
-}
-
-// Parse command line arguments
-const args = process.argv.slice(2);
-
-// Call appropriate function based on command line arguments
-// Call appropriate function based on command line arguments
-if (args[0] === "mint") {
-  mintToken(args[1], args[2], args[3]);
-} else if (args[0] === "transfer") {
-  transferToken(args[1], args[2]);
-} else if (args[0] === "balance") {
-  checkBalance(args[1]);
-} else if (args[0] === "approve") {
-  setApprovalForAll(args[1], args[2], args[3]);
-} else {
-  console.log("Invalid command");
-}
-
+mintToken();
 
 //command to mint: node erc721.js mint recipientaddress uri gaslimit
 // /Command to set approval for all: node erc721.js approve operatoraddress true/false gaslimit
+//https://opensea.io/assets/ethereum/0xb852c6b5892256c264cc2c888ea462189154d8d7/2397

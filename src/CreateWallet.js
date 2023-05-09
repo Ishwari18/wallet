@@ -16,6 +16,7 @@ export default function CreateWallet() {
   const [amount, setAmount] = useState("");
   const [nfts, setNfts] = useState(null);
   const [erc20Tokens, setERC20Tokens] = useState([]);
+  const [transactions, setTransactions] = useState([]);
 
   async function handleCreateWallet() {
     const newWallet = ethers.Wallet.createRandom();
@@ -23,7 +24,6 @@ export default function CreateWallet() {
     setMnemonic(newWallet.mnemonic.phrase);
     return newWallet;
   }
-
   async function handleImportWallet() {
     try {
       const privateKey = prompt("Enter your private key");
@@ -38,7 +38,6 @@ export default function CreateWallet() {
       alert("Failed to import wallet");
     }
   }
-
   async function getAccounts() {
     try {
       const accounts = await provider.listAccounts();
@@ -48,7 +47,6 @@ export default function CreateWallet() {
       return null;
     }
   }
-
   const handleShowPrivateKey = () => {
     setShowPrivateKey(true);
   };
@@ -62,7 +60,6 @@ export default function CreateWallet() {
   const handleAmountChange = (event) => {
     setAmount(event.target.value);
   };
-
   const handleSend = async () => {
     if (!wallet) {
       alert("Wallet not created yet. Please create a wallet first.");
@@ -87,7 +84,6 @@ export default function CreateWallet() {
       }
     }
   };
-
   async function getNFTs() {
     const address = wallet.address;
     const abi = [
@@ -122,10 +118,10 @@ export default function CreateWallet() {
       }
     }
     async function handleTransfer(tokenId) {
-
       const signer = wallet.connect(provider);
-      const contractAddress = tokens.find((token) => token.id === tokenId)
-        .contractAddress;
+      const contractAddress = tokens.find(
+        (token) => token.id === tokenId
+      ).contractAddress;
       const abi = [
         "function transferFrom(address from, address to, uint256 tokenId) public",
       ];
@@ -135,7 +131,9 @@ export default function CreateWallet() {
         return;
       }
       try {
-        await contract.connect(signer).transferFrom(wallet.address, recipient, tokenId);
+        await contract
+          .connect(signer)
+          .transferFrom(wallet.address, recipient, tokenId);
         alert(`NFT ${tokenId} transferred successfully to ${recipient}`);
       } catch (err) {
         console.log(err);
@@ -144,7 +142,7 @@ export default function CreateWallet() {
     }
 
     const tableRows = tokens.map((token) => (
-      <tr key={(token.id + token.contractAddress)}>
+      <tr key={token.id + token.contractAddress}>
         <td>{token.id}</td>
         <td>
           <a href={token.uri}>{token.uri}</a>
@@ -174,6 +172,23 @@ export default function CreateWallet() {
         <tbody>{tableRows}</tbody>
       </table>
     );
+  }
+  async function loadTransactions() {
+    try {
+      const txCount = await provider.getTransactionCount(wallet.address);
+      const txs = [];
+      for (let i = 0; i < txCount; i++) {
+        const txReceipt = await provider.getTransactionReceipt(i);
+        const txHash = await txReceipt.transactionHash();
+        const tx = await provider.getTransaction(txHash);
+        if (tx && (tx.from === wallet.address || tx.to === wallet.address)) {
+          txs.push(tx);
+        }
+      }
+      setTransactions(txs);
+    } catch (error) {
+      console.log("Error loading transactions:", error);
+    }
   }
 
   async function handleGetERC20Tokens() {
@@ -280,6 +295,22 @@ export default function CreateWallet() {
               <button onClick={handleGetERC20Tokens}>Get ERC20 Tokens</button>
               {nfts}
               {erc20TokensTable}
+            </div>
+            <div>
+              <button onClick={loadTransactions}>View Transactions</button>
+              <ul>
+                {transactions.map((tx) => (
+                  <li key={tx.hash}>
+                    <a
+                      href={`https://etherscan.io/tx/${tx.hash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tx.hash}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
