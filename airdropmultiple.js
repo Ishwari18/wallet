@@ -17,11 +17,16 @@ async function bulkAirdropERC20(tokenAddress, recipients, amounts) {
 }
 
 async function bulkAirdropERC721() {
-    const tokenAddress = '0xCF2f99838637A447A27c698128cbd174b1BCAFBf'; // set token address here
-    const recipients = ['0x5bB80ecf6d7b8D7421EeAfa71dD6beAe60b8841f', '0x3A98Be1D1628B6A107BC2636cB2d4a4C422B59E5']; // set recipient addresses here
-    const ids = [4, 5]; // set token ids here
-    await airdropContract.bulkAirdropERC721(tokenAddress, recipients, ids);
-  }
+    const tokenAddressA = '0xCF2f99838637A447A27c698128cbd174b1BCAFBf'; // set token address here
+    const recipientsA = ['0x3A98Be1D1628B6A107BC2636cB2d4a4C422B59E5']; // set recipient addresses here
+    const idsA = [6]; // set token ids here
+    await airdropContract.bulkAirdropERC721(tokenAddressA, recipientsA, idsA);
+
+    const tokenAddressB = '0xa43c9E8678cB4cd16f3d83bA6914966324bd9Afa '; // set token address here
+    const recipientsB = ['0x5bB80ecf6d7b8D7421EeAfa71dD6beAe60b8841f']; // set recipient addresses here
+    const idsB = [4, 5]; // set token ids here
+    await airdropContract.bulkAirdropERC721(tokenAddressB, recipientsB, idsB);
+}
   
 // Parse command line arguments
 const args = process.argv.slice(2);

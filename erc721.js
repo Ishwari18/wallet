@@ -15,7 +15,7 @@ const contract = new ethers.Contract(contractAddress, contractAbi, wallet);
 
 async function mintToken() {
   const to = "0x0A59223D2d7018C5d6f5fDD6d9a02Ea6828fD22f";
-  const uri = "https://opensea.io/assets/matic/0xe28d2d8746d855251ba677a91626009cb33aa4f9/5621";
+  const uri = "https://opensea.io/assets/ethereum/0xabcdb5710b88f456fed1e99025379e2969f29610/2981";
 
   const tx = await contract.safeMint(to, uri);
   await tx.wait();
