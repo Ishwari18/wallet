@@ -117,29 +117,6 @@ export default function CreateWallet() {
         });
       }
     }
-    async function handleTransfer(tokenId) {
-      const signer = wallet.connect(provider);
-      const contractAddress = tokens.find(
-        (token) => token.id === tokenId
-      ).contractAddress;
-      const abi = [
-        "function transferFrom(address from, address to, uint256 tokenId) public",
-      ];
-      const contract = new ethers.Contract(contractAddress, abi, provider);
-      const recipient = prompt("Enter recipient address:");
-      if (!recipient) {
-        return;
-      }
-      try {
-        await contract
-          .connect(signer)
-          .transferFrom(wallet.address, recipient, tokenId);
-        alert(`NFT ${tokenId} transferred successfully to ${recipient}`);
-      } catch (err) {
-        console.log(err);
-        alert(`Error transferring NFT ${tokenId}: ${err.message}`);
-      }
-    }
 
     const tableRows = tokens.map((token) => (
       <tr key={token.id + token.contractAddress}>
@@ -152,9 +129,7 @@ export default function CreateWallet() {
         </td>
         <td>{token.name}</td>
         <td>{token.contractAddress}</td>
-        <td>
-          <button onClick={() => handleTransfer(token.id)}>Transfer</button>
-        </td>
+       
       </tr>
     ));
     setNfts(
@@ -166,13 +141,71 @@ export default function CreateWallet() {
             <th>Image</th>
             <th>Contract Name</th>
             <th>Contract Address</th>
-            <th>Action</th>
           </tr>
         </thead>
         <tbody>{tableRows}</tbody>
       </table>
     );
   }
+
+  async function transferAllNFTs() {
+    const recipient = prompt("Enter recipient address:");
+  if (!recipient) {
+    return;
+  }
+
+    const address = wallet.address;
+    const abi = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
+      "function tokenURI(uint256 tokenId) view returns (string)",
+      "function transferFrom(address from, address to, uint256 tokenId) public",
+    ];
+    const contracts = [
+      {
+        address: "0xCF2f99838637A447A27c698128cbd174b1BCAFBf", // Replace with the address of the first NFT contract
+        name: "NFT Contract 1",
+      },
+      {
+        address: "0xa43c9E8678cB4cd16f3d83bA6914966324bd9Afa", // Replace with the address of the second NFT contract
+        name: "NFT Contract 2",
+      },
+    ];
+    const tokens = [];
+    for (let j = 0; j < contracts.length; j++) {
+      const contract = new ethers.Contract(contracts[j].address, abi, provider);
+      const balance = await contract.balanceOf(address);
+      for (let i = 0; i < balance.toNumber(); i++) {
+        const tokenId = await contract.tokenOfOwnerByIndex(address, i);
+        const uri = await contract.tokenURI(tokenId);
+        tokens.push({
+          id: tokenId.toNumber(),
+          uri,
+          name: contracts[j].name,
+          contractAddress: contracts[j].address,
+        });
+      }
+    }
+    const signer = wallet.connect(provider);
+    for (let i = 0; i < tokens.length; i++) {
+      const contractAddress = tokens[i].contractAddress;
+      const tokenId = tokens[i].id;
+      const abi = [
+        "function transferFrom(address from, address to, uint256 tokenId) public",
+      ];
+      const contract = new ethers.Contract(contractAddress, abi, provider);
+      try {
+        await contract
+          .connect(signer)
+          .transferFrom(wallet.address, recipient, tokenId);
+        console.log(`NFT ${tokenId} transferred successfully to ${recipient}`);
+      } catch (err) {
+        console.log(err);
+        console.log(`Error transferring NFT ${tokenId}: ${err.message}`);
+      }
+    }
+  }
+  
   async function loadTransactions() {
     try {
       const txCount = await provider.getTransactionCount(wallet.address);
@@ -293,6 +326,8 @@ export default function CreateWallet() {
             <div>
               <button onClick={getNFTs}>Get NFTs</button>
               <button onClick={handleGetERC20Tokens}>Get ERC20 Tokens</button>
+              <button onClick={transferAllNFTs}>Transfer All NFTs</button>
+
               {nfts}
               {erc20TokensTable}
             </div>
